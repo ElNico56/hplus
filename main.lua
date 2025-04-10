@@ -237,6 +237,19 @@ local function execute(command)
 			store = pop()
 		elseif command == '$' then -- load
 			push(store)
+		elseif command == '#' then -- system functions
+			local cmd = pop()
+			if cmd == "output" then
+				local val = pop()
+				if type(val) == 'table' then
+					print_stack(val)
+				else
+					print(val)
+				end
+			elseif cmd == "input" then
+				local input = io.read()
+				push(input or "")
+			end
 		else
 			print("Unknown command:", command)
 		end
@@ -250,7 +263,14 @@ elseif arg[1] then
 	for _, token in ipairs(lex(file:read'*a')) do
 		execute(token)
 	end
-	print_stack(stack)
+	if #stack > 0 then
+		print"--- stack ---"
+		print_stack(stack)
+	end
+	if store then
+		print"--- store ---"
+		print_stack(store)
+	end
 	file:close()
 else
 	while true do
