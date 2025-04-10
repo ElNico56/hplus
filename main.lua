@@ -36,19 +36,18 @@ local function print_stack(value, seen)
 	for i, v in ipairs(value) do
 		if type(v) == 'table' then
 			if seen[v] then
-				io.write'***'
+				io.write'###'
 			else
 				seen[v] = true
-				io.write'{ '
+				io.write'[ '
 				print_stack(v, seen)
-				io.write' }'
+				io.write' ]'
 			end
 		else
 			io.write(tostring(v))
 		end
 		io.write(i < #value and ' ' or '')
 	end
-	io.write'\n'
 end
 
 local function execute(command)
@@ -129,7 +128,11 @@ local function execute(command)
 			push(table.unpack(buff))
 		elseif command == '||' then -- absolute value
 			local a = pop()
-			push(math.abs(a))
+			if type(a) == 'table' then
+				push(#a)
+			else
+				push(math.abs(a))
+			end
 		elseif command == '|' then -- or
 			local b, a = pop(), pop()
 			push((truthy(a) or truthy(b)) and 1 or 0)
@@ -149,7 +152,23 @@ local function execute(command)
 			pop()
 		elseif command == '+' then -- add
 			local b, a = pop(), pop()
-			push(a + b)
+			if type(a) == "number" and type(b) == "number" then
+				push(a + b)
+			elseif type(a) == "table" then
+				local buff = {}
+				for _, v in ipairs(a) do
+					buff[#buff+1] = v
+				end
+				if type(b) == "table" then
+					for _, v in ipairs(b) do
+						buff[#buff+1] = v
+					end
+					push(buff)
+				else
+					buff[#buff+1] = b
+					push(buff)
+				end
+			end
 		elseif command == '-' then -- subtract
 			local b, a = pop(), pop()
 			push(a - b)
@@ -173,7 +192,7 @@ local function execute(command)
 			push(a ~= b and 1 or 0)
 		elseif command == '?' then -- conditional
 			local c, b, a = pop(), pop(), pop()
-			push(a == 0 and c or b)
+			push(truthy(a) and b or c)
 		elseif command == '.' then -- duplicate
 			local a = pop()
 			push(a, a)
@@ -199,9 +218,6 @@ local function execute(command)
 			local c, b, a = pop(), pop(), pop()
 			a[b + 1] = c
 			push(a)
-		elseif command == '..' then -- concatenate
-			local b, a = pop(), pop()
-			table.insert(a, b)
 		elseif command == '[...]' then -- pack
 			local a = pop()
 			local buff = {}
@@ -242,6 +258,7 @@ local function execute(command)
 				local val = pop()
 				if type(val) == 'table' then
 					print_stack(val)
+					io.write'\n'
 				else
 					print(val)
 				end
