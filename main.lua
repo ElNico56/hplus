@@ -48,6 +48,7 @@ local function print_stack(value, seen)
 		end
 		io.write(i < #value and ' ' or '')
 	end
+	io.write'\n'
 end
 
 local function execute(command)
@@ -198,12 +199,10 @@ local function execute(command)
 			local c, b, a = pop(), pop(), pop()
 			a[b + 1] = c
 			push(a)
-		elseif command == '{}' then -- empty table
-			push{}
 		elseif command == '..' then -- concatenate
 			local b, a = pop(), pop()
 			table.insert(a, b)
-		elseif command == '{...}' then -- pack
+		elseif command == '[...]' then -- pack
 			local a = pop()
 			local buff = {}
 			for i = 1, a do
