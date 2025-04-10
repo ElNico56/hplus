@@ -1,3 +1,4 @@
+{2*} double:
 22 7 / pi:
 \pi pi 2[...] \output#
-\tau 2 pi * 2[...] \output#
+\tau pi Double 2[...] \output#
