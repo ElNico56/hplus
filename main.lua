@@ -98,21 +98,21 @@ local function execute(command)
 			else
 				error("Variable not found: "..name)
 			end
-		elseif command:match'^[~v]+$' then -- planet
+		elseif command:match'^[()]+$' then -- planet
 			local buff = {}
 			for char in command:gmatch'.' do
 				local val = pop()
-				if char == '-' then
+				if char == ')' then
 					table.insert(buff, 1, val)
 				end
 			end
 			push(table.unpack(buff))
-		elseif command:match'^![~v]+$' then -- eval with planet
+		elseif command:match'^![()]+$' then -- eval with planet
 			local a = pop()
 			local buff = {}
 			for char in command:sub(2):gmatch'.' do
 				local val = pop()
-				if char == '-' then
+				if char == ')' then
 					table.insert(buff, 1, val)
 				end
 			end

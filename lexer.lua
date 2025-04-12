@@ -1,11 +1,11 @@
 -- h+ lexer
 
 local patterns = {
-	"^[{}]",    -- braces
-	"^[%l%u_]+:?", -- variables
-	"^%d+",     -- number
-	"^%[%]=",   -- array assignment
-	"^%[%]",    -- array
+	"^[{}]",   -- braces
+	"^[%l%u]+:?", -- variables
+	"^%d+",    -- number
+	"^%[%]=",  -- array assignment
+	"^%[%]",   -- array
 	"^[-+*/?]", -- single char commands
 }
 
