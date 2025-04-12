@@ -126,6 +126,23 @@ local function execute(command)
 				error("Non executable: "..a)
 			end
 			push(table.unpack(buff))
+		elseif command == '!!' then -- foreach
+			local func, list = pop(), pop()
+			local buff = {}
+			for _, v in ipairs(list) do
+				push(v)
+				if type(func) == 'table' then
+					for _, cmd in ipairs(func) do
+						execute(cmd)
+					end
+				elseif type(func) == 'string' then
+					execute(func)
+				else
+					error("Non executable: "..func)
+				end
+				buff[#buff+1] = pop()
+			end
+			push(buff)
 		elseif command == '||' then -- absolute value
 			local a = pop()
 			if type(a) == 'table' then
@@ -133,6 +150,13 @@ local function execute(command)
 			else
 				push(math.abs(a))
 			end
+		elseif command == '<>' then -- range
+			local a = pop()
+			local buff = {}
+			for i = 1, a do
+				buff[#buff+1] = i - 1
+			end
+			push(buff)
 		elseif command == '|' then -- or
 			local b, a = pop(), pop()
 			push((truthy(a) or truthy(b)) and 1 or 0)
