@@ -6,6 +6,7 @@ local patterns = {
 	"^%d+",     -- number
 	"^%[%]=",   -- array assignment
 	"^%[%]",    -- array
+	"^[-+*/?!]", -- single char commands
 }
 
 local function lex(src)

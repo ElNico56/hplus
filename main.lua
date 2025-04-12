@@ -93,12 +93,12 @@ local function execute(command)
 				elseif type(var) == 'string' then
 					execute(var)
 				else
-					error"Non executable"
+					error("Non executable: "..var)
 				end
 			else
 				error("Variable not found: "..name)
 			end
-		elseif command:match'^[-v]+$' then -- planet
+		elseif command:match'^[~v]+$' then -- planet
 			local buff = {}
 			for char in command:gmatch'.' do
 				local val = pop()
@@ -107,7 +107,7 @@ local function execute(command)
 				end
 			end
 			push(table.unpack(buff))
-		elseif command:match'^![-v]+$' then -- eval with planet
+		elseif command:match'^![~v]+$' then -- eval with planet
 			local a = pop()
 			local buff = {}
 			for char in command:sub(2):gmatch'.' do
@@ -123,7 +123,7 @@ local function execute(command)
 			elseif type(a) == 'string' then
 				execute(a)
 			else
-				error"Non executabe"
+				error("Non executable: "..a)
 			end
 			push(table.unpack(buff))
 		elseif command == '||' then -- absolute value
@@ -246,7 +246,7 @@ local function execute(command)
 			elseif type(a) == "string" then
 				execute(a)
 			else
-				error"Non executable"
+				error("Non executable: "..a)
 			end
 		elseif command == '$=' then -- save
 			store = pop()
