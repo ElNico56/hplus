@@ -8,6 +8,17 @@ local store = nil
 local depth = 0
 local buffer
 
+local function copy(val)
+	if type(val) == "table" then
+		local cop = {}
+		for i, v in ipairs(val) do
+			cop[i] = v
+		end
+		return cop
+	end
+	return val
+end
+
 local function push(...)
 	for _, v in ipairs{...} do
 		table.insert(stack, v)
@@ -219,10 +230,10 @@ local function execute(command)
 			push(truthy(a) and b or c)
 		elseif command == '.' then -- duplicate
 			local a = pop()
-			push(a, a)
+			push(a, copy(a))
 		elseif command == ',' then -- over
 			local b, a = pop(), pop()
-			push(a, b, a)
+			push(a, b, copy(a))
 		elseif command == '>>' then -- rotate right
 			local c, b, a = pop(), pop(), pop()
 			push(c, a, b)
@@ -231,10 +242,10 @@ local function execute(command)
 			push(b, c, a)
 		elseif command == '>>>' then -- rotate right with copy
 			local c, b, a = pop(), pop(), pop()
-			push(c, a, b, c)
+			push(c, a, b, copy(c))
 		elseif command == '<<<' then -- rotate left with copy
 			local c, b, a = pop(), pop(), pop()
-			push(a, b, c, a)
+			push(a, b, c, copy(a))
 		elseif command == '[]' then -- index
 			local b, a = pop(), pop()
 			push(a[b + 1])
