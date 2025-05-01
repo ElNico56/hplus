@@ -325,7 +325,7 @@ elseif arg[1] then
 	file:close()
 else
 	while true do
-		io.write'\n\t> '
+		io.write'\n\t'
 		local line = io.read()
 		if line == "" then break end
 		for _, token in ipairs(lex(line)) do
