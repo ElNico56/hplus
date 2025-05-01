@@ -174,10 +174,10 @@ local function execute(command)
 		elseif command == '&' then -- and
 			local b, a = pop(), pop()
 			push((truthy(a) and truthy(b)) and 1 or 0)
-		elseif command == "^" then -- xor
+		elseif command == '^^' then -- xor
 			local b, a = pop(), pop()
 			push((truthy(a) ~= truthy(b)) and 1 or 0)
-		elseif command == '!!' then -- not
+		elseif command == '^' then -- not
 			local a = pop()
 			push(truthy(a) and 0 or 1)
 		elseif command == ':' then -- swap / flip
