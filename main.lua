@@ -3,7 +3,7 @@
 local lex = require"lexer"
 
 local stack = {}
-local vars = {}
+local vars = {} -- {double = lex"2*"}
 local store = nil
 local depth = 0
 local buffer
