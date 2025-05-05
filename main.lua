@@ -261,9 +261,7 @@ local function execute(command)
 		elseif command == '[]' then -- pack
 			local a = pop()
 			local buff = {}
-			for i = 1, a do
-				table.insert(buff, 1, pop())
-			end
+			for _ = 1, a do insert(buff, 1, pop()) end
 			push(buff)
 		elseif command == '..' then -- unpack
 			local a = pop()
@@ -287,7 +285,7 @@ local function execute(command)
 				local val = pop()
 				if type(val) == 'table' then
 					print_stack(val)
-					io.write'\n'
+					write'\n'
 				else
 					print(val)
 				end
@@ -319,12 +317,13 @@ elseif arg[1] then
 	file:close()
 else
 	while true do
-		io.write'\n\t'
+		write"    "
 		local line = io.read()
 		if line == "" then break end
 		for _, token in ipairs(lex(line)) do
 			execute(token)
 		end
 		print_stack(stack)
+		print""
 	end
 end
