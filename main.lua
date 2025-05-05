@@ -1,6 +1,10 @@
 -- h+
 
 local lex = require"lexer"
+local unpack = (unpack or table.unpack) ---@diagnostic disable-line
+local insert, remove = table.insert, table.remove
+local abs = math.abs
+local write = io.write
 
 local stack = {}
 local vars = {} -- {double = lex"2*"}
@@ -21,11 +25,11 @@ end
 
 local function push(...)
 	for _, v in ipairs{...} do
-		table.insert(stack, v)
+		insert(stack, v)
 	end
 end
 local function pop()
-	local v = table.remove(stack)
+	local v = remove(stack)
 	if v == nil then error'Not enough values on the stack' end
 	return v
 end
@@ -36,8 +40,6 @@ local function truthy(v)
 		return v ~= ""
 	elseif type(v) == "table" then
 		return #v > 0
-	elseif type(v) == "boolean" then
-		return v
 	end
 	return false
 end
@@ -47,17 +49,17 @@ local function print_stack(value, seen)
 	for i, v in ipairs(value) do
 		if type(v) == 'table' then
 			if seen[v] then
-				io.write'###'
+				write'###'
 			else
 				seen[v] = true
-				io.write'[ '
+				write'[ '
 				print_stack(v, seen)
-				io.write' ]'
+				write' ]'
 			end
 		else
-			io.write(tostring(v))
+			write(tostring(v))
 		end
-		io.write(i < #value and ' ' or '')
+		write(i < #value and ' ' or '')
 	end
 end
 
@@ -79,9 +81,9 @@ local function execute(command)
 	else
 		if tonumber(command) then
 			push(tonumber(command))
-		elseif command:match"^\\." then         -- escape
+		elseif command:match"^\\." then     -- escape
 			push(command:sub(2))
-		elseif command:lower():match"^[%l%u]+:$" then -- save var
+		elseif command:lower():match"^%l+:$" then -- save var
 			local a = pop()
 			local name = command:sub(1, -2):lower()
 			vars[name] = a
@@ -95,57 +97,56 @@ local function execute(command)
 			end
 		elseif command:match"^%u[%l%u]*$" then -- eval var
 			local name = command:lower()
-			local var = vars[name]
-			if var then
-				if type(var) == 'table' then
-					for _, v in ipairs(var) do
-						execute(v)
-					end
-				elseif type(var) == 'string' then
-					execute(var)
+			local fnc = vars[name]
+			if fnc then
+				if type(fnc) == 'table' then
+					for _, cmd in ipairs(fnc) do execute(cmd) end
+				elseif type(fnc) == 'string' then
+					execute(fnc)
 				else
-					error("Non executable: "..var)
+					error("Non executable: "..fnc)
 				end
 			else
 				error("Variable not found: "..name)
 			end
-		elseif command:match'^[()]+$' then -- planet
+		elseif command:match'^-[.:]+$' then -- planet / bookkeeper
 			local buff = {}
 			for char in command:gmatch'.' do
 				local val = pop()
-				if char == ')' then
-					table.insert(buff, 1, val)
-				end
+				if char == ':' then insert(buff, 1, val) end
 			end
-			push(table.unpack(buff))
-		elseif command:match'^![()]+$' then -- eval with planet
-			local a = pop()
+			push(unpack(buff))
+		elseif command == '!' then -- eval
+			local fnc = pop()
+			if type(fnc) == 'table' then
+				for _, cmd in ipairs(fnc) do execute(cmd) end
+			elseif type(fnc) == "string" then
+				execute(fnc)
+			else
+				error("Non executable: "..fnc)
+			end
+		elseif command:match'^![.:]+$' then -- eval with planet / bookkeeper
+			local fnc = pop()
 			local buff = {}
 			for char in command:sub(2):gmatch'.' do
 				local val = pop()
-				if char == ')' then
-					table.insert(buff, 1, val)
-				end
+				if char == ':' then insert(buff, 1, val) end
 			end
-			if type(a) == 'table' then
-				for _, v in ipairs(a) do
-					execute(v)
-				end
-			elseif type(a) == 'string' then
-				execute(a)
+			if type(fnc) == 'table' then
+				for _, cmd in ipairs(fnc) do execute(cmd) end
+			elseif type(fnc) == 'string' then
+				execute(fnc)
 			else
-				error("Non executable: "..a)
+				error("Non executable: "..fnc)
 			end
-			push(table.unpack(buff))
+			push(unpack(buff))
 		elseif command == '!!' then -- foreach
 			local func, list = pop(), pop()
 			local buff = {}
-			for _, v in ipairs(list) do
-				push(v)
+			for _, elem in ipairs(list) do
+				push(elem)
 				if type(func) == 'table' then
-					for _, cmd in ipairs(func) do
-						execute(cmd)
-					end
+					for _, cmd in ipairs(func) do execute(cmd) end
 				elseif type(func) == 'string' then
 					execute(func)
 				else
@@ -154,80 +155,21 @@ local function execute(command)
 				buff[#buff+1] = pop()
 			end
 			push(buff)
-		elseif command == '||' then -- absolute value
-			local a = pop()
-			if type(a) == 'table' then
-				push(#a)
-			else
-				push(math.abs(a))
+		elseif command == '!/' then -- reduce
+			local func, list = pop(), pop()
+			push(remove(list, 1))
+			for _, elem in ipairs(list) do
+				push(elem)
+				if type(func) == 'table' then
+					for _, cmd in ipairs(func) do execute(cmd) end
+				elseif type(func) == 'string' then
+					execute(func)
+				else
+					error("Non executable: "..func)
+				end
 			end
-		elseif command == '<>' then -- range
-			local a = pop()
-			local buff = {}
-			for i = 1, a do
-				buff[#buff+1] = i - 1
-			end
-			push(buff)
-		elseif command == '|' then -- or
-			local b, a = pop(), pop()
-			push((truthy(a) or truthy(b)) and 1 or 0)
-		elseif command == '&' then -- and
-			local b, a = pop(), pop()
-			push((truthy(a) and truthy(b)) and 1 or 0)
-		elseif command == '^^' then -- xor
-			local b, a = pop(), pop()
-			push((truthy(a) ~= truthy(b)) and 1 or 0)
-		elseif command == '^' then -- not
-			local a = pop()
-			push(truthy(a) and 0 or 1)
-		elseif command == ':' then -- swap / flip
-			local b, a = pop(), pop()
-			push(b, a)
 		elseif command == ';' then -- pop
 			pop()
-		elseif command == '+' then -- add
-			local b, a = pop(), pop()
-			if type(a) == "number" and type(b) == "number" then
-				push(a + b)
-			elseif type(a) == "table" then
-				local buff = {}
-				for _, v in ipairs(a) do
-					buff[#buff+1] = v
-				end
-				if type(b) == "table" then
-					for _, v in ipairs(b) do
-						buff[#buff+1] = v
-					end
-					push(buff)
-				else
-					buff[#buff+1] = b
-					push(buff)
-				end
-			end
-		elseif command == '-' then -- subtract
-			local b, a = pop(), pop()
-			push(a - b)
-		elseif command == '*' then -- multiply
-			local b, a = pop(), pop()
-			push(a * b)
-		elseif command == '/' then -- divide
-			local b, a = pop(), pop()
-			push(a / b)
-		elseif command == '<' then -- less than
-			local b, a = pop(), pop()
-			push(a < b and 1 or 0)
-		elseif command == '>' then -- greater than
-			local b, a = pop(), pop()
-			push(a > b and 1 or 0)
-		elseif command == '=' then -- equal
-			local b, a = pop(), pop()
-			push(a == b and 1 or 0)
-		elseif command == '!=' then -- not equal
-			local b, a = pop(), pop()
-			push(a ~= b and 1 or 0)
-		elseif command == '?' then -- conditional
-			local c, b, a = pop(), pop(), pop()
-			push(truthy(a) and b or c)
 		elseif command == '.' then -- duplicate
 			local a = pop()
 			push(a, copy(a))
@@ -246,21 +188,84 @@ local function execute(command)
 		elseif command == '<<<' then -- rotate left with copy
 			local c, b, a = pop(), pop(), pop()
 			push(a, b, c, copy(a))
-		elseif command == '[]' then -- index
+		elseif command == '||' then -- absolute value
+			local a = pop()
+			if type(a) == 'table' then
+				push(#a)
+			else
+				push(abs(a))
+			end
+		elseif command == '<>' then -- range
+			local a = pop()
+			local buff = {}
+			for i = 1, a do buff[#buff+1] = i - 1 end
+			push(buff)
+		elseif command == '|' then -- or
+			local b, a = pop(), pop()
+			push((truthy(a) or truthy(b)) and 1 or 0)
+		elseif command == '&' then -- and
+			local b, a = pop(), pop()
+			push((truthy(a) and truthy(b)) and 1 or 0)
+		elseif command == '^' then -- xor
+			local b, a = pop(), pop()
+			push((truthy(a) ~= truthy(b)) and 1 or 0)
+		elseif command == '~' then -- not
+			local a = pop()
+			push(truthy(a) and 0 or 1)
+		elseif command == ':' then -- swap / flip
+			local b, a = pop(), pop()
+			push(b, a)
+		elseif command == '+' then -- add
+			local b, a = pop(), pop()
+			if "number" == type(a) and type(a) == type(b) then
+				push(a + b)
+			elseif type(a) == "table" then
+				local buff = {}
+				for _, v in ipairs(a) do buff[#buff+1] = v end
+				if type(b) == "table" then
+					for _, v in ipairs(b) do buff[#buff+1] = v end
+					push(buff)
+				else
+					buff[#buff+1] = b
+					push(buff)
+				end
+			end
+		elseif command == '-' then -- subtract
+			local b, a = pop(), pop()
+			push(a - b)
+		elseif command == '*' then -- multiply
+			local b, a = pop(), pop()
+			push(a * b)
+		elseif command == '%' then -- divide
+			local b, a = pop(), pop()
+			push(a / b)
+		elseif command == '<' then -- less than
+			local b, a = pop(), pop()
+			push(a < b and 1 or 0)
+		elseif command == '>' then -- greater than
+			local b, a = pop(), pop()
+			push(a > b and 1 or 0)
+		elseif command == '=' then -- equal
+			local b, a = pop(), pop()
+			push(a == b and 1 or 0)
+		elseif command == '?' then -- conditional
+			local c, b, a = pop(), pop(), pop()
+			push(truthy(a) and b or c)
+		elseif command == '@' then -- index
 			local b, a = pop(), pop()
 			push(a[b + 1])
-		elseif command == '[]=' then -- index assign
+		elseif command == '@=' then -- index assign
 			local c, b, a = pop(), pop(), pop()
 			a[b + 1] = c
 			push(a)
-		elseif command == '[...]' then -- pack
+		elseif command == '[]' then -- pack
 			local a = pop()
 			local buff = {}
 			for i = 1, a do
 				table.insert(buff, 1, pop())
 			end
 			push(buff)
-		elseif command == '...' then -- unpack
+		elseif command == '..' then -- unpack
 			local a = pop()
 			for _, v in ipairs(a) do
 				push(v)
@@ -272,17 +277,6 @@ local function execute(command)
 			error'Unmatched }'
 		elseif command == '\\' then -- escape
 			depth = -1
-		elseif command == '!' then -- eval
-			local a = pop()
-			if type(a) == 'table' then
-				for _, v in ipairs(a) do
-					execute(v)
-				end
-			elseif type(a) == "string" then
-				execute(a)
-			else
-				error("Non executable: "..a)
-			end
 		elseif command == '$=' then -- save
 			store = pop()
 		elseif command == '$' then -- load

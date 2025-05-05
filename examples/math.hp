@@ -1,4 +1,4 @@
 {2*} double:
-22 7 / pi:
-\pi pi 2[...] \output#
-\tau pi Double 2[...] \output#
+22 7 % pi:
+\pi pi 2[] \output#
+\tau pi Double 2[] \output#

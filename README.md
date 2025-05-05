@@ -9,19 +9,24 @@
 - **`abc`** Push value stored in 'abc'.
 - **`Abc`** Execute value stored in 'abc'.
 ### stack manipulation
-- **`))()`** Planet notation: keep-keep-drop-keep.
+- **`-::.:`** Planet notation: keep-keep-drop-keep.
 ```
-	1 2 3 4 ))()
+	1 2 3 4 -::.:
 1 2 4
 ```
-- **`!))`** Planet eval: keep-keep, eval, push back kept values.
+- **`!`** Eval.
 ```
-	1 2 3 4 {-} !))
+	10 20 {+} !
+30
+```
+- **`!::`** Planet eval: keep-keep, eval, push back kept values.
+```
+	1 2 3 4 {-} !::
 -1 3 4
 ```
 - **`!!`** Foreach.
 ```
-	1 2 3 4 5 5[...]
+	1 2 3 4 5 5[]
 [ 1 2 3 4 5 ]
 	{10*} !!
 [ 10 20 30 40 50 ]
@@ -75,16 +80,16 @@
 	10 20 30 <<<
 10 20 30 10
 ```
-- **`[...]`** Pack.
+- **`[]`** Pack.
 ```
-	10 20 30 3[...]
+	10 20 30 3[]
 [ 10 20 30 ]
 ```
-- **`...`** Unpack.
+- **`..`** Unpack.
 ```
-	10 20 30 3[...]
+	10 20 30 3[]
 [ 10 20 30 ]
-	...
+	..
 10 20 30
 ```
 - **`{`** Open list.
@@ -97,11 +102,6 @@
 ```
 	\ +
 +
-```
-- **`!`** Eval.
-```
-	10 20 \ + !
-30
 ```
 - **`$=`** Save.
 - **`$`** Load.
@@ -164,9 +164,9 @@
 	5 10 *
 50
 ```
-- **`/`** Div.
+- **`%`** Div.
 ```
-	5 10 /
+	5 10 %
 0.5
 ```
 - **`<`** Less than.
@@ -184,18 +184,13 @@
 	5 10 =
 0
 ```
-- **`!=`** Unequal.
+- **`@`** Index.
 ```
-	5 10 !=
-1
-```
-- **`[]`** Index.
-```
-	{a b c} 1 []
+	{a b c} 1 @
 b
 ```
-- **`[]=`** Index assign.
+- **`@=`** Index assign.
 ```
-	{a b c} 1 \z []=
+	{a b c} 1 \z @=
 [ a z c ]
 ```
