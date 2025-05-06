@@ -253,7 +253,13 @@ local function execute(command)
 			push(truthy(a) and b or c)
 		elseif command == '@' then -- index
 			local b, a = pop(), pop()
-			push(a[b + 1])
+			if type(b) == 'table' then
+				local buff = {}
+				for _, v in ipairs(b) do buff[#buff+1] = a[v + 1] end
+				push(buff)
+			else
+				push(a[b + 1])
+			end
 		elseif command == '@=' then -- index assign
 			local c, b, a = pop(), pop(), pop()
 			a[b + 1] = c
